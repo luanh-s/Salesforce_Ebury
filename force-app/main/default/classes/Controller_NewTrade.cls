@@ -2,12 +2,14 @@ public with sharing class Controller_NewTrade {
 
     @AuraEnabled
     public static List<BookedTrade__c> getTrades() {
-        return [SELECT Id, OwnerId, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, BuyCurrency__c, SellCurrency__c, SellAmount__c, BuyAmount__c, Rate__c, DateBooked__c FROM BookedTrade__c];
+        // RETURN ALL TRADES IN THE ORGANIZATION, ORDERED BY THE BOOKED DATE.
+        return [SELECT Id, OwnerId, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, BuyCurrency__c, SellCurrency__c, SellAmount__c, BuyAmount__c, Rate__c, DateBooked__c FROM BookedTrade__c ORDER BY DateBooked__c];
     }
 
     @AuraEnabled
     public static Map<String, Object> getCurrencyValue(String toCurrency, String fromCurrency, Decimal amount) {
 
+        // APEX TO MAKE THE CALLOUT, AND RETURN THE RATES FROM 2 DIFFERENT CURRENCIES.
         Map<String, Object> result = new Map<String, Object>();
         try {
             HttpRequest req = new HttpRequest();
@@ -53,6 +55,8 @@ public with sharing class Controller_NewTrade {
 
     @AuraEnabled
     public static List<Object> searchSell(){
+
+        // RETURN ALL PICKLIST OPTIONS FOR SELL CURRENCY;
         List<Object> pickListValuesList= new List<Object>();
         Schema.DescribeFieldResult fieldResult = BookedTrade__c.SellCurrency__c.getDescribe();
         List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
@@ -67,6 +71,8 @@ public with sharing class Controller_NewTrade {
 
     @AuraEnabled
     public static List<Object> searchBuy(){
+
+        // RETURN ALL PICKLIST OPTIONS FOR BUY CURRENCY;
         List<Object> pickListValuesList= new List<Object>();
         Schema.DescribeFieldResult fieldResult = BookedTrade__c.SellCurrency__c.getDescribe();
         List<Schema.PicklistEntry> ple = fieldResult.getPicklistValues();
@@ -84,6 +90,7 @@ public with sharing class Controller_NewTrade {
         Map<String, Object> result = new Map<String, Object>();
 
         try {
+            // CREATES A NEW BOOKED TRADE, BASED ON THE PARAMETERS PASSED.
             BookedTrade__c trade = new BookedTrade__c();
                 trade.BuyAmount__c = buyAmount;
                 trade.BuyCurrency__c = buyCurrency;
@@ -93,6 +100,7 @@ public with sharing class Controller_NewTrade {
                 trade.SellCurrency__c = sellCurrency;
             insert trade;
 
+            // CREATES THE CHATTER POST MESSAGE.
             String messsageBody =
             '<p>A new trade has been created with the following data:</p>';
 
@@ -106,16 +114,17 @@ public with sharing class Controller_NewTrade {
             '<p>Link to the trade: <a href="'+URL.getSalesforceBaseUrl().toExternalForm()+'/'+trade.Id+'">'+URL.getSalesforceBaseUrl().toExternalForm()+'/'+trade.Id+'</a></p>';
             
 
+            // QUERIES THE QUEUE EXISTING IN THE ORGANIZATION.
             List<Group> queueGroup = [SELECT Id, Name, DeveloperName, RelatedId, Type, Email, OwnerId, DoesSendEmailToMembers, DoesIncludeBosses, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp FROM Group WHERE Type = 'Queue' AND Name = 'Trade reviewers' LIMIT 1];
 
+            // CHECK IF IT HAS FOUND THE MATCHING QUEUE.
             if (queueGroup.size() == 0) {
                     result.put('error', true);
                     result.put('message', 'Queue not found');
                 return result;
             }
 
-            // List<GroupMember> groupMembers = [SELECT Id, GroupId, UserOrGroupId, SystemModstamp FROM GroupMember WHERE GroupId = :queueGroup[0].Id LIMIT 1];
-
+            // CREATE THE FEED ITEM.
             FeedItem post = new FeedItem();
                 post.ParentId = trade.Id;
                 post.Body = messsageBody+messageData;
@@ -123,12 +132,6 @@ public with sharing class Controller_NewTrade {
             insert post;
 
             List<CustomNotificationType > template = [SELECT Id, DeveloperName FROM CustomNotificationType WHERE DeveloperName = 'Notify_Trade'];
-
-            // Set<String> idsUsers = new Set<String>();
-            // for (GroupMember member : groupMembers) {
-            //     idsUsers.add(member.UserOrGroupId);
-            // }
-
             
             String messageData2 = 
             'Sell Currency: '+trade.SellCurrency__c+'\n'+
@@ -138,6 +141,7 @@ public with sharing class Controller_NewTrade {
             'Rate: '+trade.Rate__c+'\n'+
             'Booked Date: '+trade.DateBooked__c.format()+'';
 
+            // NOTIFY ALL NEEDED USERS.
             Messaging.CustomNotification notif = new Messaging.CustomNotification();
                 // Set the contents for the delinking notification
                 notif.setTitle('A new trade has been created with the following data:');
@@ -149,9 +153,10 @@ public with sharing class Controller_NewTrade {
 
             // Send the notification
             notif.send(new Set<String>{queueGroup[0].Id});
-                result.put('message', 'A new trade has been created and the Chatter message was Posted.');
-                result.put('recordId', trade.Id);
-                result.put('error', false);
+        
+            result.put('message', 'A new trade has been created and the Chatter message was Posted.');
+            result.put('recordId', trade.Id);
+            result.put('error', false);
             return result;
         } catch (Exception e) {
             result.put('error', true);

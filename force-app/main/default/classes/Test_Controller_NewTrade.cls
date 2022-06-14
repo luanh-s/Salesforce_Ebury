@@ -19,6 +19,7 @@ private class Test_Controller_NewTrade {
 
             Map<String,Object> resp = Controller_NewTrade.getCurrencyValue('JPY', 'GBP', 25);
             
+            Controller_NewTrade.getTrades();
             Controller_NewTrade.searchSell();
             Controller_NewTrade.searchBuy();
             

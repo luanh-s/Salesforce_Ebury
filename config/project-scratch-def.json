@@ -1,6 +1,7 @@
 {
   "orgName": "Demo company",
   "edition": "Developer",
+  "username": "user-test-123456@ebury.com",
   "hasSampleData": false,
   "features": ["EnableSetPasswordInApi"],
   "settings": {
