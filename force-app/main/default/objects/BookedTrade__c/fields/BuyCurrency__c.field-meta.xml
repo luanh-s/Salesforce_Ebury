@@ -2,7 +2,7 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>BuyCurrency__c</fullName>
     <externalId>false</externalId>
-    <label>Buy CCY</label>
+    <label>Buy Currency</label>
     <required>true</required>
     <trackFeedHistory>false</trackFeedHistory>
     <trackHistory>false</trackHistory>

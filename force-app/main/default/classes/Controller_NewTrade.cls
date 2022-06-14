@@ -1,6 +1,11 @@
 public with sharing class Controller_NewTrade {
 
     @AuraEnabled
+    public static List<BookedTrade__c> getTrades() {
+        return [SELECT Id, OwnerId, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, BuyCurrency__c, SellCurrency__c, SellAmount__c, BuyAmount__c, Rate__c, DateBooked__c FROM BookedTrade__c];
+    }
+
+    @AuraEnabled
     public static Map<String, Object> getCurrencyValue(String toCurrency, String fromCurrency, Decimal amount) {
 
         Map<String, Object> result = new Map<String, Object>();
@@ -154,4 +159,5 @@ public with sharing class Controller_NewTrade {
             return result;
         }
     }
+
 }

@@ -101,6 +101,14 @@ export default class NewTrade extends NavigationMixin(LightningElement) {
         });
     }
 
+    returnToTrades() {
+        this[NavigationMixin.Navigate]({
+            type: 'standard__navItemPage',
+            attributes: {
+                apiName: 'BookedTrades'
+            },
+        });
+    }
 }
 
 // sfdx force:org:create -s -f config/project-scratch-def.json -a dreamhouse-org
